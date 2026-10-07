@@ -1,6 +1,8 @@
 # dietChartGenerator
 Deep Learning Final Project
 
+Project maintainer: Mohammed Faiz Nawaz
+
 For a live deployment, see [DEPLOYMENT.md](DEPLOYMENT.md). GitHub stores the
 source; the running Next.js and NestJS services need a web host.
 
