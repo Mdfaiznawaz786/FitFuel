@@ -1,16 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import type { MealItem } from "./use-diet-plan"
 import { cartStorageKey, readCart, writeCart } from "@/lib/cart-storage"
 
 export type CartItem = MealItem & { sourceMealId?: string }
 
+const CART_TOAST_ID = "cart-item-added"
+
 export function useCart() {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [showCartDialog, setShowCartDialog] = useState(false)
   const [cartLoaded, setCartLoaded] = useState(false)
+  const cartToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Load cart items from localStorage on component mount
   useEffect(() => {
@@ -28,6 +31,11 @@ export function useCart() {
     if (cartLoaded) writeCart(cartItems)
   }, [cartItems, cartLoaded])
 
+  useEffect(() => () => {
+    if (cartToastTimer.current) clearTimeout(cartToastTimer.current)
+    toast.dismiss(CART_TOAST_ID)
+  }, [])
+
   const addToCart = (item: MealItem, deliveryTime: string) => {
     // Make sure the item has a mealType and deliveryTime
     const itemWithDetails = {
@@ -40,15 +48,21 @@ export function useCart() {
 
     setCartItems((previous) => [...previous, itemWithDetails])
 
-    // Show a toast notification
-   
+    if (cartToastTimer.current) clearTimeout(cartToastTimer.current)
+
     toast.success(`${item.name} has been added to your cart!`, {
-      duration: 3000,
+      id: CART_TOAST_ID,
+      duration: Infinity,
       action: {
         label: "View Cart",
         onClick: () => setShowCartDialog(true),
       },
     })
+
+    cartToastTimer.current = setTimeout(() => {
+      toast.dismiss(CART_TOAST_ID)
+      cartToastTimer.current = null
+    }, 2000)
   }
 
   const removeFromCart = (itemId: string) => {
