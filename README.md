@@ -1,99 +1,109 @@
-# dietChartGenerator
-Deep Learning Final Project
+# FitFuel
 
-Project maintainer: Mohammed Faiz Nawaz
+FitFuel is a diet planning web app. A user can enter profile details, generate a draft meal plan with Gemini, save the plan, build a grocery list, and record what they spent after shopping. The dashboard summarizes saved plans, entered weights, and self-reported grocery spending.
 
-For a live deployment, see [DEPLOYMENT.md](DEPLOYMENT.md). GitHub stores the
-source; the running Next.js and NestJS services need a web host.
+**Project status:** The repository contains a deployable web and API configuration, but a deployment must be configured and tested before it can be treated as a production service. AI plans are suggestions, not medical advice. FitFuel does not place retailer orders, process payments, or verify deliveries.
+
+Maintainer: Mohammed Faiz Nawaz.
+
+## Architecture
+
+| Component | Location | Responsibility |
+| --- | --- | --- |
+| Next.js 15 web app | [`Frontend/`](Frontend/) | App Router UI, browser session, diet planner, dashboard, shopping list |
+| NestJS 11 API | [`NestJSBackend/diet-chart-generator/`](NestJSBackend/diet-chart-generator/) | JWT authentication, profile and plan APIs, Gemini calls, Supabase access |
+| Supabase PostgreSQL | [`supabase/bootstrap.sql`](supabase/bootstrap.sql) | Accounts, plans, profile data, and related records |
+| Supabase Storage | Created by the API on first receipt save | Private `fitfuel-receipts` bucket for self-reported receipt notes |
+| Python research artifact | [`PythonBackend/`](PythonBackend/) | Separate training and FastAPI code; not used by the current web flow |
+
+```mermaid
+flowchart LR
+    Browser[Next.js browser app] -->|HTTPS and JWT| API[NestJS API]
+    API -->|server-only key| DB[(Supabase PostgreSQL)]
+    API -->|server-only key| Storage[(Supabase Storage)]
+    API -->|server-only key| Gemini[Google Gemini]
+    Browser -->|opens search links| Stores[Retailer websites]
+```
+
+The browser calls the NestJS API through `NEXT_PUBLIC_API_URL`. The API uses its own account and JWT flow; it does not use Supabase Auth. The Supabase secret key and Gemini key belong only in the API environment. See [architecture decision records](docs/adr/README.md) for the reasons and tradeoffs.
+
+## Requirements
+
+- Node.js 22 and npm.
+- A Supabase project with its project URL and **secret** API key.
+- A Google Gemini API key with access to the configured model.
+- A long, random `JWT_SECRET` for signing application tokens.
 
 ## Run locally
 
-Use Node.js 22 and npm. From the project root, install the two active application services:
+Run these commands from the repository root. On a new Supabase project, paste [`supabase/bootstrap.sql`](supabase/bootstrap.sql) into **Supabase Dashboard > SQL Editor** and run it once. The script creates the tables and RPCs used by the API and restricts access for browser roles. Review the SQL before applying it to an existing project.
 
 ```powershell
-cd Frontend
-npm ci
-cd ..\NestJSBackend\diet-chart-generator
-npm ci
+Copy-Item .env.example .env
+Copy-Item Frontend/.env.example Frontend/.env.local
+npm --prefix Frontend ci
+npm --prefix NestJSBackend/diet-chart-generator ci
 ```
 
-Create a `.env` file in the project root with `GEMINI_API_KEY` and a random `JWT_SECRET`. For accounts and saved diet charts, create a Supabase project, run [supabase/bootstrap.sql](supabase/bootstrap.sql) in its **SQL Editor**, and add the project's URL and **secret** API key to `.env`:
+Edit the root `.env` with real values. Do not put the Supabase secret key in `Frontend/.env.local` or any variable beginning with `NEXT_PUBLIC_`.
 
-```env
-GEMINI_API_KEY=your-gemini-api-key
-# Optional; defaults to gemini-3.8-flash
-GEMINI_MODEL=gemini-3.8-flash
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SECRET_KEY=sb_secret_...
-```
+| Variable | Where | Purpose |
+| --- | --- | --- |
+| `SUPABASE_URL` | API / root `.env` | Supabase project URL |
+| `SUPABASE_SECRET_KEY` | API / root `.env` | Server-only database and Storage access |
+| `GEMINI_API_KEY` | API / root `.env` | Diet generation and AI guide |
+| `JWT_SECRET` | API / root `.env` | Signs application access and refresh tokens |
+| `GEMINI_MODEL` | API, optional | Overrides the model name configured in the code |
+| `NEXT_PUBLIC_API_URL` | Frontend `.env.local` | Public URL of the NestJS API; defaults to `http://localhost:3001` |
 
-Get the URL from the project's **Connect** dialog and the secret key from **Settings → API Keys**. Keep `SUPABASE_SECRET_KEY` in the backend environment only; never paste it into chat, browser code, or source control. This app uses its own JWT authentication and needs the server-only key to access tables whose public access is disabled. The API reads the root `.env` file on startup.
-
-Create or replace the Gemini key on the [Google AI Studio API keys page](https://aistudio.google.com/api-keys). A suspended key cannot generate diet plans; replace it in `.env` and restart the NestJS API. Keep this key server-side as well.
-
-In separate terminals, run:
+Start the services in separate terminals from the repository root:
 
 ```powershell
-cd Frontend
-npm run dev
+npm --prefix NestJSBackend/diet-chart-generator run start:dev
 ```
 
 ```powershell
-cd NestJSBackend\diet-chart-generator
-npm run start:dev
+npm --prefix Frontend run dev
 ```
 
-Open http://localhost:3000. The frontend sends API requests to http://localhost:3001 by default; set `NEXT_PUBLIC_API_URL` in the frontend environment if the API runs elsewhere. The Python service is separate from the current frontend and NestJS API flow.
+Open `http://localhost:3000`. The API listens on port `3001` by default. Its root path returns `Hello World!`; that response confirms the process is listening, not that Supabase and Gemini are healthy. For an end-to-end check, create an account, save profile data, generate and save a plan, then record a receipt note from checkout.
 
-Doc Link: https://docs.google.com/document/d/1bN4nzD3LRyAuY305WRv_w-5LNVFiPYjsPIJqBMg8KsQ/edit?tab=t.0
+## Main user flow and data
 
-# 🥗 dietChartGenerator
+1. **Sign up and sign in:** NestJS hashes passwords and issues JWTs. The `users` and `refresh_tokens` tables store account data.
+2. **Profile and medical history:** Profile fields and entered weights are saved in Supabase. Medical History displays those fields; medical document upload and extraction are not implemented.
+3. **Generate and save a plan:** NestJS sends user inputs to Gemini, checks for a meal-plan response, and returns a draft. Saving writes a `Diet` record. The selected duration is saved and shown in Diet History; it does not generate a different menu for each day or measure adherence.
+4. **Shop:** The grocery list persists in browser local storage until the user clears it. FitFuel opens product searches at Walmart, Wegmans, Target, Kroger, and Walgreens. The list is not sent to a retailer cart.
+5. **Estimate and record spending:** The API attempts to derive rough ranges from public Kroger listings, which can be missing or inaccurate. Users may enter observed store prices and, after shopping, record an amount paid. Receipt notes are stored in a private Supabase Storage bucket and used for dashboard totals. They are not payment transactions or retailer receipts.
 
-This project began as a deep learning course submission. The current FitFuel app uses a Next.js frontend, a NestJS API, Supabase for account and diet data, and Google's Gemini API to generate draft diet plans. The Python training notebook is a separate research artifact; its fine-tuned checkpoint is not included in this repository or used by the current app.
+## Build and verification
 
-The dashboard shows profile weight and its dated history, saved diet plans, and grocery amounts the user records after shopping. Saving a weight in Profile starts the weight history; another weight on a later date creates a trend. Medical History summarizes information entered in Profile. Medical-report file upload and extraction are not implemented. Store links do not confirm purchases or deliveries.
+```powershell
+npm --prefix NestJSBackend/diet-chart-generator run build
+npm --prefix Frontend run build
+```
 
----
+These commands check that each service builds. The NestJS package also has `npm test`; passing builds or unit tests does not validate a deployed Supabase project, Gemini quota, retailer listings, or the complete user journey. Verify those against the target environment before release.
 
-## 🚀 Features
+## Deploy
 
-- 🧠 Gemini-generated draft diet plans from details entered by the user
-- 📦 User authentication and data storage using **Supabase**
-- 📝 Automatically generates personalized diet charts based on user input
-- 📊 Dashboard for profile weight, saved plans, and recorded grocery spending
+[`render.yaml`](render.yaml) defines separate Render services for the API and web app. Follow [DEPLOYMENT.md](DEPLOYMENT.md) for the Blueprint setup, secret variables, and post-deployment checks. GitHub hosts the source code; GitHub Pages cannot run the NestJS API.
 
----
+Before allowing real users, use HTTPS, set service secrets in the hosting provider, validate signup and plan generation against the production Supabase project, and review the production gaps below. Back up Supabase data and define a recovery process appropriate to the data you collect.
 
-## 🔧 Tech Stack
+## Current limitations and release work
 
-- **Current generator:** Google Gemini through the NestJS API
-- **Dataset:** Custom compiled diet and nutrition dataset
-- **Backend:** NestJS; the FastAPI code is separate from the current app flow
-- **Frontend:** Next.js
-- **Database:** Supabase (PostgreSQL)
-- **Deployment configuration:** Render Blueprint in `render.yaml`; no DigitalOcean deployment is verified here
+- Generated nutrition advice is not clinically validated. Users with medical conditions should review plans with a qualified clinician.
+- The API currently enables CORS for all origins and has no application-wide rate limiting. Restrict origins and add abuse controls before opening the service broadly.
+- The app uses custom JWT authentication and a server-only Supabase key. Review token storage, account recovery, access controls, and logging before handling sensitive health data at scale.
+- Receipt notes are self-reported. The app has no payment processor, retailer order integration, or proof of delivery. Price lookup depends on public page markup and may fail.
+- The Python notebook records a fine-tuning experiment, but its checkpoint is not in this repository and is not used by the running web app. The active generator is Gemini through NestJS.
+- The included Render Blueprint is configuration, not proof that the service is live. Complete the end-to-end deployment checks in [DEPLOYMENT.md](DEPLOYMENT.md).
 
----
+## Documentation
 
-## 🧪 Dataset
-
-The custom dataset contains:
-- Nutritional information
-- User health profiles (e.g., diabetic, hypertensive)
-- Sample diet recommendations
-- Caloric and macronutrient breakdowns
-
-The dataset was cleaned and tokenized for fine-tuning DistilGPT using HuggingFace `Trainer`.
-
----
-
-## 🧠 Model Training
-
-- **Base Model:** `distilgpt2` from HuggingFace
-- **Fine-tuning evidence:** The included notebook records a completed three-epoch run on 10,000 examples, with a 90/10 train/test split. Its execution location cannot be confirmed from this repository.
-- **Tokenizer:** GPT2Tokenizer
-- **Frameworks:** PyTorch + HuggingFace Transformers
-
-The notebook saves to `./diet_model_finetuned`, but that directory is absent here. `PythonBackend/project_weights_mohammed_faiz_nawaz.txt` contains an external Box link to weights that has not been verified. `PythonBackend/main.py` attempts to load the checkpoint, then calls Gemini to generate the response; the current Next.js frontend calls the NestJS API instead.
-
-Training Sample:
+- [Deployment guide](DEPLOYMENT.md)
+- [Architecture decision records (ADRs)](docs/adr/README.md)
+- [Supabase schema](supabase/bootstrap.sql)
+- [Backend environment template](.env.example)
+- [Frontend environment template](Frontend/.env.example)
