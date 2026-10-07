@@ -10,16 +10,15 @@ export default function HeroSection() {
         <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_500px]">
           <div className="flex flex-col justify-center space-y-4">
             <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80 w-fit">
-              Introducing NutriAI
+              Introducing FitFuel
             </div>
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
                 Personalized Diet Plans <br className="hidden sm:inline" />
-                <span className="text-primary">Powered by AI</span>
+                <span className="text-primary">Powered by Gemini</span>
               </h1>
               <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                Upload your medical  and health data. Our AI analyzes your unique needs and creates a customized
-                nutrition plan for optimal health.
+                Enter your health details and food preferences, then generate a diet plan you can review, save, and use to build a grocery list.
               </p>
             </div>
             <div className="flex flex-col gap-2 min-[400px]:flex-row pt-4">
@@ -28,8 +27,8 @@ export default function HeroSection() {
                   Get Started <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" className="rounded-full">
-                <Link href="#learn-more">Learn More</Link>
+              <Button asChild variant="outline" size="lg" className="rounded-full">
+                <Link href="#features">Learn More</Link>
               </Button>
             </div>
           </div>
@@ -48,4 +47,3 @@ export default function HeroSection() {
     </section>
   )
 }
-

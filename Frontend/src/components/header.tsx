@@ -7,7 +7,7 @@ import { Salad } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useScrollPosition } from "@/hooks/use-scroll-position"
 
-const navItems = ["Features", "How It Works", "Testimonials", "Pricing"]
+const navItems = ["Features", "How It Works", "Examples", "Pricing"]
 
 export default function Header() {
   const scrollPosition = useScrollPosition()

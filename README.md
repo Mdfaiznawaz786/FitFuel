@@ -49,27 +49,29 @@ Doc Link: https://docs.google.com/document/d/1bN4nzD3LRyAuY305WRv_w-5LNVFiPYjsPI
 
 # 🥗 dietChartGenerator
 
-This project is the final submission for the **Deep Learning course**. It is a complete pipeline for generating **personalized diet charts** using a fine-tuned DistilGPT model trained on a custom diet dataset. The application takes into account individual user profiles including health conditions, preferences, and goals to generate tailored diet recommendations.
+This project began as a deep learning course submission. The current FitFuel app uses a Next.js frontend, a NestJS API, Supabase for account and diet data, and Google's Gemini API to generate draft diet plans. The Python training notebook is a separate research artifact; its fine-tuned checkpoint is not included in this repository or used by the current app.
+
+The dashboard shows profile weight and its dated history, saved diet plans, and grocery amounts the user records after shopping. Saving a weight in Profile starts the weight history; another weight on a later date creates a trend. Medical History summarizes information entered in Profile. Medical-report file upload and extraction are not implemented. Store links do not confirm purchases or deliveries.
 
 ---
 
 ## 🚀 Features
 
-- 🧠 Fine-tuned **DistilGPT** model on a custom nutrition & diet dataset
+- 🧠 Gemini-generated draft diet plans from details entered by the user
 - 📦 User authentication and data storage using **Supabase**
 - 📝 Automatically generates personalized diet charts based on user input
-- 🌐 Deployed with a simple and clean UI for interaction
+- 📊 Dashboard for profile weight, saved plans, and recorded grocery spending
 
 ---
 
 ## 🔧 Tech Stack
 
-- **Model:** DistilGPT (fine-tuned using HuggingFace Transformers)
+- **Current generator:** Google Gemini through the NestJS API
 - **Dataset:** Custom compiled diet and nutrition dataset
-- **Backend:** Python (FastAPI)
-- **Frontend:** React / Next.js (optional)
+- **Backend:** NestJS; the FastAPI code is separate from the current app flow
+- **Frontend:** Next.js
 - **Database:** Supabase (PostgreSQL)
-- **Deployment:** Docker + DigitalOcean
+- **Deployment configuration:** Render Blueprint in `render.yaml`; no DigitalOcean deployment is verified here
 
 ---
 
@@ -88,8 +90,10 @@ The dataset was cleaned and tokenized for fine-tuning DistilGPT using HuggingFac
 ## 🧠 Model Training
 
 - **Base Model:** `distilgpt2` from HuggingFace
-- **Fine-tuning:** Done on Google Colab with custom prompts + responses dataset
+- **Fine-tuning evidence:** The included notebook records a completed three-epoch run on 10,000 examples, with a 90/10 train/test split. Its execution location cannot be confirmed from this repository.
 - **Tokenizer:** GPT2Tokenizer
 - **Frameworks:** PyTorch + HuggingFace Transformers
+
+The notebook saves to `./diet_model_finetuned`, but that directory is absent here. `PythonBackend/project_weights_mohammed_faiz_nawaz.txt` contains an external Box link to weights that has not been verified. `PythonBackend/main.py` attempts to load the checkpoint, then calls Gemini to generate the response; the current Next.js frontend calls the NestJS API instead.
 
 Training Sample:

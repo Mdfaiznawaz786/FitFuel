@@ -209,11 +209,13 @@ export default function ProfileForm() {
     }
 
     // Prepare payload
+    const now = new Date();
     const payload = {
       ...data,
       conditions,
       medications,
       dietaryRestrictions,
+      weightRecordedDate: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`,
     };
 
     fetch(API.PROFILE_UPDATEPROFILE, {
@@ -432,6 +434,7 @@ export default function ProfileForm() {
                 <div className="space-y-2">
                   <Label htmlFor="weight">Weight (kg)</Label>
                   <Input id="weight" type="number" {...form.register("weight")} placeholder="Enter your weight in kg" />
+                  <p className="text-xs text-muted-foreground">Saving your profile records one weight entry for today.</p>
                   {form.formState.errors.weight && (
                     <p className="text-sm text-red-500">{form.formState.errors.weight.message}</p>
                   )}

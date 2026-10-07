@@ -11,11 +11,13 @@ export class ProfileService {
 
   async updateProfile(profileData: any, userId: string) {
     try {
-      // The form does not edit every column accepted by updateprofile. Preserve those values.
+      // The form does not edit every profile column. Preserve values it does not submit.
       const { data: current, error: lookupError } = await this.databaseService
         .getClient()
         .from('users')
-        .select('name, email, phoneNumber, age, goal, gender, height, weight, bloodpressure, heartrate, bloodsugar, medicalconditions, medications, dietaryrestrictions, allergies, dietarypreferences, dateofbirth')
+        .select(
+          'name, email, phoneNumber, age, goal, gender, height, weight, weightHistory, bloodpressure, heartrate, bloodsugar, medicalconditions, medications, dietaryrestrictions, allergies, dietarypreferences, dateofbirth',
+        )
         .eq('id', userId)
         .single();
 
@@ -25,42 +27,55 @@ export class ProfileService {
 
       // Extract medical conditions from conditions array
       const medicalConditions = Array.isArray(profileData.conditions)
-        ? profileData.conditions.map((condition) => typeof condition === 'string' ? condition : JSON.stringify(condition))
+        ? profileData.conditions.map((condition) =>
+            typeof condition === 'string'
+              ? condition
+              : JSON.stringify(condition),
+          )
         : current.medicalconditions;
 
       // Extract medication names from medications array
       const medications = Array.isArray(profileData.medications)
-        ? profileData.medications.map((medication) => typeof medication === 'string' ? medication : JSON.stringify(medication))
+        ? profileData.medications.map((medication) =>
+            typeof medication === 'string'
+              ? medication
+              : JSON.stringify(medication),
+          )
         : current.medications;
 
       // The current form submits an array; accept the older checkbox object as well.
       const dietaryRestrictions = Array.isArray(profileData.dietaryRestrictions)
-        ? profileData.dietaryRestrictions.filter((item) => typeof item === 'string')
+        ? profileData.dietaryRestrictions.filter(
+            (item) => typeof item === 'string',
+          )
         : profileData.dietaryRestrictions
-        ? Object.entries(profileData.dietaryRestrictions)
-            .filter(([key, value]) => value === true && key !== 'other')
-            .map(([key]) => {
-              switch (key) {
-                case 'noSugar':
-                  return 'No Sugar';
-                case 'lowSodium':
-                  return 'Low Sodium';
-                case 'glutenFree':
-                  return 'Gluten Free';
-                case 'dairyFree':
-                  return 'Dairy Free';
-                case 'vegetarian':
-                  return 'Vegetarian';
-                case 'vegan':
-                  return 'Vegan';
-                default:
-                  return key;
-              }
-            })
-        : current.dietaryrestrictions;
+          ? Object.entries(profileData.dietaryRestrictions)
+              .filter(([key, value]) => value === true && key !== 'other')
+              .map(([key]) => {
+                switch (key) {
+                  case 'noSugar':
+                    return 'No Sugar';
+                  case 'lowSodium':
+                    return 'Low Sodium';
+                  case 'glutenFree':
+                    return 'Gluten Free';
+                  case 'dairyFree':
+                    return 'Dairy Free';
+                  case 'vegetarian':
+                    return 'Vegetarian';
+                  case 'vegan':
+                    return 'Vegan';
+                  default:
+                    return key;
+                }
+              })
+          : current.dietaryrestrictions;
 
       // Add "other" value if provided
-      if (!Array.isArray(profileData.dietaryRestrictions) && profileData.dietaryRestrictions?.other) {
+      if (
+        !Array.isArray(profileData.dietaryRestrictions) &&
+        profileData.dietaryRestrictions?.other
+      ) {
         if (dietaryRestrictions) {
           dietaryRestrictions.push(profileData.dietaryRestrictions.other);
         }
@@ -72,10 +87,43 @@ export class ProfileService {
         dateOfBirth = dateOfBirth.split('T')[0]; // Extract YYYY-MM-DD part
       }
 
+      const weight = profileData.weight ?? current.weight;
+      const numericWeight = Number(weight);
+      if (
+        profileData.weight !== undefined &&
+        (!Number.isFinite(numericWeight) || numericWeight <= 0)
+      ) {
+        throw new Error('Weight must be a positive number');
+      }
+
+      const weightHistory = Array.isArray(current.weightHistory)
+        ? [...current.weightHistory]
+        : [];
+      if (
+        profileData.weight !== undefined &&
+        Number.isFinite(numericWeight) &&
+        numericWeight > 0
+      ) {
+        const requestedDate = profileData.weightRecordedDate;
+        const today =
+          typeof requestedDate === 'string' &&
+          /^\d{4}-\d{2}-\d{2}$/.test(requestedDate) &&
+          !Number.isNaN(Date.parse(requestedDate))
+            ? requestedDate
+            : new Date().toISOString().slice(0, 10);
+        const latest = weightHistory[weightHistory.length - 1];
+        const entry = { date: today, weight: numericWeight };
+        if (latest?.date === today)
+          weightHistory[weightHistory.length - 1] = entry;
+        else weightHistory.push(entry);
+      }
+
+      // Update the profile and its weight history together, so the dashboard
+      // never sees a new measurement without the corresponding history entry.
       const { data, error } = await this.databaseService
         .getClient()
-        .rpc('updateprofile', {
-          userid: userId,
+        .from('users')
+        .update({
           name: profileData.fullName ?? current.name,
           email: profileData.email ?? current.email,
           phoneNumber: profileData.phone ?? current.phoneNumber,
@@ -83,21 +131,27 @@ export class ProfileService {
           goal: profileData.goal ?? current.goal,
           gender: profileData.gender ?? current.gender,
           height: profileData.height ?? current.height,
-          weight: profileData.weight ?? current.weight,
+          weight,
+          weightHistory,
           bloodpressure: profileData.bloodPressure ?? current.bloodpressure,
           heartrate: profileData.heartRate ?? current.heartrate,
           bloodsugar: profileData.bloodSugar ?? current.bloodsugar,
           medicalconditions: medicalConditions,
           medications: medications,
           dietaryrestrictions: dietaryRestrictions,
-          allergies: profileData.allergies === undefined
-            ? current.allergies
-            : this.toTextArray(profileData.allergies),
-          dietarypreferences: profileData.dietaryPreferences === undefined
-            ? current.dietarypreferences
-            : this.toTextArray(profileData.dietaryPreferences),
+          allergies:
+            profileData.allergies === undefined
+              ? current.allergies
+              : this.toTextArray(profileData.allergies),
+          dietarypreferences:
+            profileData.dietaryPreferences === undefined
+              ? current.dietarypreferences
+              : this.toTextArray(profileData.dietaryPreferences),
           dateofbirth: dateOfBirth,
-        });
+        })
+        .eq('id', userId)
+        .select('id, weight, weightHistory')
+        .single();
 
       if (error) {
         console.error('Profile update error:', error);
@@ -120,8 +174,13 @@ export class ProfileService {
   }
 
   private toTextArray(value: unknown): string[] {
-    const items = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [];
-    return items.filter((item): item is string => typeof item === 'string')
+    const items = Array.isArray(value)
+      ? value
+      : typeof value === 'string'
+        ? value.split(',')
+        : [];
+    return items
+      .filter((item): item is string => typeof item === 'string')
       .map((item) => item.trim())
       .filter(Boolean);
   }

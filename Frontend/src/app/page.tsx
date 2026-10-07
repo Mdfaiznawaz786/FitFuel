@@ -3,7 +3,7 @@ import Footer from "@/components/footer"
 import HeroSection from "@/components/sections/hero-section"
 import FeaturesSection from "@/components/sections/features-section"
 import HowItWorksSection from "@/components/sections/how-it-works-section"
-import TestimonialsSection from "@/components/sections/testimonials-section"
+import ExamplesSection from "@/components/sections/examples-section"
 import PricingSection from "@/components/sections/pricing-section"
 import CtaSection from "@/components/sections/cta-section"
 
@@ -15,7 +15,7 @@ export default function LandingPage() {
         <HeroSection />
         <FeaturesSection />
         <HowItWorksSection />
-        <TestimonialsSection />
+        <ExamplesSection />
         <PricingSection />
         <CtaSection />
       </main>
@@ -23,4 +23,3 @@ export default function LandingPage() {
     </div>
   )
 }
-

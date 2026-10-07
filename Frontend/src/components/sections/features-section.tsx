@@ -5,22 +5,22 @@ export default function FeaturesSection() {
   const features = [
     {
       icon: FileText,
-      title: "Medical Report Analysis",
-      description: "Upload your medical reports and our AI will extract relevant health markers.",
+      title: "Your Health Profile",
+      description: "Enter measurements, conditions, medications, and food preferences in your profile.",
       content:
-        "Our system analyzes cholesterol levels, blood sugar, vitamin deficiencies, and other key health indicators.",
+        "Review the details you entered in Medical History and update them whenever they change.",
     },
     {
       icon: Brain,
       title: "AI-Powered Recommendations",
-      description: "Advanced algorithms create personalized nutrition plans based on your data.",
-      content: "Our AI considers your health conditions, allergies, dietary preferences, and nutritional needs.",
+      description: "Generate a draft meal plan from the details you provide.",
+      content: "Review and edit the generated foods and portions before saving your plan.",
     },
     {
       icon: Salad,
       title: "Custom Meal Plans",
-      description: "Receive weekly meal plans tailored to your specific health requirements.",
-      content: "Get delicious recipes, shopping lists, and meal prep instructions designed for your health goals.",
+      description: "Build and save meal plans for the duration you choose.",
+      content: "Save your plan and build a grocery list with links to major stores.",
     },
   ]
 
@@ -36,8 +36,7 @@ export default function FeaturesSection() {
               Smart Nutrition Tailored to Your Body
             </h2>
             <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-              Our AI-powered platform analyzes your medical data to create personalized diet plans that work with your
-              unique health profile.
+              FitFuel uses the details you enter to draft meal plans you can review and adjust.
             </p>
           </div>
         </div>
@@ -63,4 +62,3 @@ export default function FeaturesSection() {
     </section>
   )
 }
-
