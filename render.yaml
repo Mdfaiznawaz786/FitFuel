@@ -1,0 +1,38 @@
+# Two Node web services are needed: GitHub Pages cannot run the Nest API.
+# Connect this repository as a Render Blueprint and provide backend secrets
+# through the Render Dashboard when prompted. Never commit real values here.
+services:
+  - type: web
+    name: fitfuel-diet-api
+    runtime: node
+    plan: free
+    rootDir: NestJSBackend/diet-chart-generator
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+
+  - type: web
+    name: fitfuel-diet-web
+    runtime: node
+    plan: free
+    rootDir: Frontend
+    buildCommand: npm ci && NEXT_PUBLIC_API_URL="https://$FITFUEL_API_HOSTNAME" npm run build
+    startCommand: npm run start -- -p $PORT -H 0.0.0.0
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: FITFUEL_API_HOSTNAME
+        fromService:
+          name: fitfuel-diet-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME

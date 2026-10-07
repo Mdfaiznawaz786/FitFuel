@@ -1,0 +1,69 @@
+# Ignore large model files
+PythonBackend/diet_model_finetuned/
+PythonBackend/diet_model_output/
+*.bin
+*.pt
+# Add other patterns as needed
+__pycache__/
+*.pyc
+node_modules/
+.npm-cache/
+.env
+.env.*
+!.env.example
+!.env.*.example
+Frontend/.next/
+**/.next/
+**/out/
+*.tsbuildinfo
+.vercel/
+**/.vercel/
+**/.render/
+frontend/.next
+frontend/node_modules
+
+# Ignore IDE specific files
+.idea/
+.vscode/
+# Ignore logs
+*.log
+PythonBackend/logs/
+# Ignore coverage reports
+coverage/
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+# Ignore temporary files
+*.tmp
+*.temp
+# Ignore macOS specific files
+.DS_Store
+# Ignore Windows specific files
+Thumbs.db
+# Ignore build artifacts
+build/
+dist/
+# Ignore test results
+test-results/
+# Ignore database files
+*.sqlite3
+# Ignore cache files
+.cache/
+# Ignore backup files
+*~
+# Ignore other common files
+*.bak
+*.swp
+# Ignore specific directories
+# Ignore frontend build artifacts
+frontend/build/
+# Ignore Python virtual environments
+venv/
+**/.venv/
+*.pem
+*.key
+*.p12
+# Ignore Docker files
+Dockerfile
+docker-compose.yml
+# Ignore configuration files
+*.config
