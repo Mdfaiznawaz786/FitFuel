@@ -20,6 +20,11 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: FITFUEL_WEB_HOSTNAME
+        fromService:
+          name: fitfuel-diet-web
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
 
   - type: web
     name: fitfuel-diet-web

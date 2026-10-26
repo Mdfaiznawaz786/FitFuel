@@ -27,8 +27,8 @@ const profileFormSchema = z.object({
   // Personal Information
   fullName: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
-  dateOfBirth: z.date({ required_error: "Please select a date of birth." }),
-  gender: z.string({ required_error: "Please select a gender." }),
+  dateOfBirth: z.date({ error: "Please select a date of birth." }),
+  gender: z.string({ error: "Please select a gender." }),
 
   // Vitals
   height: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {

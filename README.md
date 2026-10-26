@@ -89,12 +89,14 @@ These commands check that each service builds. The NestJS package also has `npm 
 
 [`render.yaml`](render.yaml) defines separate Render services for the API and web app. Follow [DEPLOYMENT.md](DEPLOYMENT.md) for the Blueprint setup, secret variables, and post-deployment checks. GitHub hosts the source code; GitHub Pages cannot run the NestJS API.
 
+[Deploy to Render](https://render.com/deploy?repo=https://github.com/Mdfaiznawaz786/FitFuel) opens the Free-plan Blueprint. You must connect a Render account and provide your own Supabase and Gemini credentials in Render's dashboard. The repository is not a live deployment.
+
 Before allowing real users, use HTTPS, set service secrets in the hosting provider, validate signup and plan generation against the production Supabase project, and review the production gaps below. Back up Supabase data and define a recovery process appropriate to the data you collect.
 
 ## Current limitations and release work
 
 - Generated nutrition advice is not clinically validated. Users with medical conditions should review plans with a qualified clinician.
-- The API currently enables CORS for all origins and has no application-wide rate limiting. Restrict origins and add abuse controls before opening the service broadly.
+- The API limits browser origins to the configured web hostname and optional `CORS_ORIGINS`, but it has no application-wide rate limiting. Add abuse controls before opening the service broadly.
 - The app uses custom JWT authentication and a server-only Supabase key. Review token storage, account recovery, access controls, and logging before handling sensitive health data at scale.
 - Receipt notes are self-reported. The app has no payment processor, retailer order integration, or proof of delivery. Price lookup depends on public page markup and may fail.
 - The Python notebook records a fine-tuning experiment, but its checkpoint is not in this repository and is not used by the running web app. The active generator is Gemini through NestJS.
